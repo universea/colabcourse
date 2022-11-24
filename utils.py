@@ -328,8 +328,10 @@ def epoch(mode, dataloader, net, optimizer, criterion, args, aug):
         num_exp += n_b
 
         if mode == 'eval':
-            flops, params = profile(net, (img,))
-            print('On test dataset flops: ', flops, 'params: ', params)
+            if show_flops == 1:
+                flops, params = profile(net, (img,))
+                #print('On test dataset flops: ', flops, 'params: ', params)
+                show_flops = 0
 
         if mode == 'train':
             optimizer.zero_grad()
