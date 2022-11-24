@@ -7,6 +7,7 @@ import torch
 import torch.nn as nn
 from torchvision.utils import save_image
 from utils import get_loops, get_dataset, get_network, get_eval_pool, evaluate_synset, get_daparam, match_loss, get_time, TensorDataset, epoch, DiffAugment, ParamDiffAug
+import matplotlib.pyplot as plt
 
 
 def main():
@@ -17,7 +18,7 @@ def main():
     parser.add_argument('--model', type=str, default='ConvNet', help='model')
     parser.add_argument('--ipc', type=int, default=1, help='image(s) per class')
     parser.add_argument('--eval_mode', type=str, default='S', help='eval_mode') # S: the same to training model, M: multi architectures,  W: net width, D: net depth, A: activation function, P: pooling layer, N: normalization layer,
-    parser.add_argument('--num_exp', type=int, default=5, help='the number of experiments')
+    parser.add_argument('--num_exp', type=int, default=1, help='the number of experiments')
     parser.add_argument('--num_eval', type=int, default=20, help='the number of evaluating randomly initialized models')
     parser.add_argument('--epoch_eval_train', type=int, default=300, help='epochs to train a model with synthetic data')
     parser.add_argument('--Iteration', type=int, default=20, help='training iterations')
@@ -106,6 +107,7 @@ def main():
                 
         acc_train = []
         acc_test  = []
+        exposides = []
 
         for it in range(args.Iteration+1):
             
@@ -113,7 +115,20 @@ def main():
             acc_train.append(acc)
             loss, acc  = epoch('eval', testloader, net, optimizer_net, criterion, args, aug = True if args.dsa else False)
             acc_test.append(acc)
+            exposides.append(it)
             print('Epoch' , it+1, 'Accuracy on train dataset', acc_train[it], ' Accuracy on test dataset', acc_test[it])           
+
+
+        fig, ax = plt.subplots()
+
+        ax.plot(exposides, acc_train, label='accuracy on train dataset') 
+        ax.plot(exposides, acc_test, label='accuracy on test dataset') 
+
+        ax.set_xlabel('Epochs') #设置x轴名称 x label
+        ax.set_ylabel('Accuracy') #设置y轴名称 y label
+        ax.set_title('The accuracy results of training and testing') #设置图名为Simple Plot
+        ax.legend() #自动检测要在图例中显示的元素，并且显示
+        fig.savefig('./train_from_origin.jpg')
 
 
 if __name__ == '__main__':
