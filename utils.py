@@ -9,6 +9,9 @@ from torchvision import datasets, transforms
 from scipy.ndimage.interpolation import rotate as scipyrotate
 from networks import MLP, ConvNet, LeNet, AlexNet, AlexNetBN, VGG11, VGG11BN, ResNet18, ResNet18BN_AP, ResNet18BN
 
+from thop import profile
+
+
 def get_dataset(dataset, data_path):
     if dataset == 'MNIST':
         channel = 1
@@ -299,6 +302,8 @@ def epoch(mode, dataloader, net, optimizer, criterion, args, aug):
     net = net.to(args.device)
     criterion = criterion.to(args.device)
 
+    show_flops = 1
+
     if mode == 'train':
         net.train()
     else:
@@ -321,6 +326,10 @@ def epoch(mode, dataloader, net, optimizer, criterion, args, aug):
         loss_avg += loss.item()*n_b
         acc_avg += acc
         num_exp += n_b
+
+        if mode == 'eval':
+            flops, params = profile(net, (img,))
+            print('On test dataset flops: ', flops, 'params: ', params)
 
         if mode == 'train':
             optimizer.zero_grad()
