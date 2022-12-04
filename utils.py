@@ -8,9 +8,42 @@ from torch.utils.data import Dataset
 from torchvision import datasets, transforms
 from scipy.ndimage.interpolation import rotate as scipyrotate
 from networks import MLP, ConvNet, LeNet, AlexNet, AlexNetBN, VGG11, VGG11BN, ResNet18, ResNet18BN_AP, ResNet18BN
-
+import cv2
 from thop import profile
+import csv
 
+class Mhist(Dataset):
+    def __init__(self, root, data_info, transform=None):
+        self.data_info = data_info
+        self.transform = transform
+        self.root = root
+        self.label_map = {'HP': 0, 'SSA': 1}
+
+    def opencv_loader(self, info):
+
+        im = cv2.cvtColor(cv2.imread(os.path.join(self.root, 'images', info[0])), cv2.COLOR_BGR2RGB)
+        label = self.label_map[info[1]]
+        return im, label
+
+    def __getitem__(self, index):
+
+        im, label = self.opencv_loader(self.data_info[index])
+
+        if self.transform is not None:
+            im = self.transform(im)
+
+        return im, label
+
+    def __repr__(self):
+        fmt_str = 'Dataset ' + self.__class__.__name__ + '\n'
+        fmt_str += '    Number of datapoints: {}\n'.format(self.__len__())
+        fmt_str += '    Root Location: {}\n'.format(self.root)
+        tmp = '    Transforms (if any): '
+        fmt_str += '{0}{1}\n'.format(tmp, self.transform.__repr__().replace('\n', '\n' + ' ' * len(tmp)))
+        return fmt_str
+
+    def __len__(self):
+        return len(self.data_info)
 
 def get_dataset(dataset, data_path):
     if dataset == 'MNIST':
@@ -95,6 +128,40 @@ def get_dataset(dataset, data_path):
             images_val[:, c] = (images_val[:, c] - mean[c]) / std[c]
 
         dst_test = TensorDataset(images_val, labels_val)  # no augmentation
+
+    elif dataset == 'MHIST':
+        channel = 3
+        im_size = (224, 224)
+        num_classes = 2
+        mean = [0.5071, 0.4866, 0.4409]
+        std = [0.267, 0.256, 0.276]
+
+        class_names = None
+
+        test_info = []
+        train_info = []
+        with open(os.path.join('mhist_dataset', 'annotations.csv'), newline='') as csvfile:
+            reader = csv.reader(csvfile, delimiter=' ', quotechar='|')
+            next(reader)
+            for row in reader:
+                info = row[0].split(',')
+                if info[3] == 'train':
+                    train_info.append(info)
+                else:
+                    test_info.append(info)
+
+        train_trans = transforms.Compose(
+            # [transforms.ToTensor(), transforms.RandomHorizontalFlip(),
+             [transforms.ToTensor(), transforms.Normalize((0.5071, 0.4866, 0.4409), (0.267, 0.256, 0.276))])
+
+        test_trans = transforms.Compose(
+            [transforms.ToTensor(),
+             transforms.Normalize((0.5071, 0.4866, 0.4409), (0.267, 0.256, 0.276))])
+
+
+        dst_train = Mhist('mhist_dataset', train_info, transform=train_trans)
+        dst_test = Mhist('mhist_dataset', test_info, transform=test_trans)
+
 
     else:
         exit('unknown dataset: %s'%dataset)

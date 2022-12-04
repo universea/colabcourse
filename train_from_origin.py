@@ -118,7 +118,7 @@ def main():
             exposides.append(it)
             print('Epoch' , it+1, 'Accuracy on train dataset', acc_train[it], ' Accuracy on test dataset', acc_test[it])           
 
-
+        print('%s training end'%get_time())
         fig, ax = plt.subplots()
 
         ax.plot(exposides, acc_train, label='accuracy on train dataset') 

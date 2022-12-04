@@ -31,6 +31,7 @@ def main():
     parser.add_argument('--data_path', type=str, default='data', help='dataset path')
     parser.add_argument('--save_path', type=str, default='result', help='path to save results')
     parser.add_argument('--dis_metric', type=str, default='ours', help='distance metric')
+    parser.add_argument('--distilled_set_name', type=str, default='result/res_DC_CIFAR10_ConvNet_10ipc.pt', help='distance metric')
 
     args = parser.parse_args()
     args.outer_loop, args.inner_loop = get_loops(args.ipc)
@@ -49,6 +50,10 @@ def main():
     channel, im_size, num_classes, class_names, mean, std, dst_train, dst_test, testloader = get_dataset(args.dataset, args.data_path)
     model_eval_pool = get_eval_pool(args.eval_mode, args.model, args.model)
 
+    distilled_set_name = args.distilled_set_name
+    dataset = torch.load(distilled_set_name)
+    syn_data = dataset['data']
+    syn_data = TensorDataset(syn_data[0][0], syn_data[0][1])
 
     accs_all_exps = dict() # record performances of all experiments
     for key in model_eval_pool:
@@ -100,7 +105,7 @@ def main():
         print('%s training begins'%get_time())
 
         dataset_train = TensorDataset(images_train, labels_train)
-        trainloader = torch.utils.data.DataLoader(dataset_train, batch_size=args.batch_train, shuffle=True, num_workers=0)
+        trainloader = torch.utils.data.DataLoader(syn_data, batch_size=args.batch_train, shuffle=True, num_workers=0)
         
         dataset_test = TensorDataset(images_test, labels_test)
         testloader = torch.utils.data.DataLoader(dataset_test, batch_size=args.batch_train, shuffle=True, num_workers=0)
@@ -116,19 +121,19 @@ def main():
             loss, acc  = epoch('eval', testloader, net, optimizer_net, criterion, args, aug = True if args.dsa else False)
             acc_test.append(acc)
             exposides.append(it)
-            print('Epoch' , it+1, 'Accuracy on train dataset', acc_train[it], ' Accuracy on test dataset', acc_test[it])           
+            print('Epoch' , it+1, 'Accuracy on train condensed dataset', acc_train[it], ' Accuracy on test dataset', acc_test[it])           
 
-
+        print('%s training end'%get_time())
         fig, ax = plt.subplots()
 
-        ax.plot(exposides, acc_train, label='accuracy on train dataset') 
+        ax.plot(exposides, acc_train, label='accuracy on train condensed dataset') 
         ax.plot(exposides, acc_test, label='accuracy on test dataset') 
 
         ax.set_xlabel('Epochs') #设置x轴名称 x label
         ax.set_ylabel('Accuracy') #设置y轴名称 y label
         ax.set_title('The accuracy results of training and testing') #设置图名为Simple Plot
         ax.legend() #自动检测要在图例中显示的元素，并且显示
-        fig.savefig('./train_from_origin.jpg')
+        fig.savefig('./train_from_condense.jpg')
 
 
 if __name__ == '__main__':
