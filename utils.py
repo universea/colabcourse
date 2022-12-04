@@ -45,7 +45,7 @@ class Mhist(Dataset):
     def __len__(self):
         return len(self.data_info)
 
-def get_dataset(dataset, data_path):
+def get_dataset(dataset, data_path, test_batch=256):
     if dataset == 'MNIST':
         channel = 1
         im_size = (28, 28)
@@ -167,7 +167,7 @@ def get_dataset(dataset, data_path):
         exit('unknown dataset: %s'%dataset)
 
 
-    testloader = torch.utils.data.DataLoader(dst_test, batch_size=256, shuffle=False, num_workers=0)
+    testloader = torch.utils.data.DataLoader(dst_test, batch_size=test_batch, shuffle=False, num_workers=0)
     return channel, im_size, num_classes, class_names, mean, std, dst_train, dst_test, testloader
 
 
