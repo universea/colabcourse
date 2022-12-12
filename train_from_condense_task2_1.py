@@ -112,20 +112,24 @@ def main():
                 
         acc_train = []
         acc_test  = []
+        loss_train = []
+        loss_test = []
         exposides = []
 
         for it in range(args.Iteration+1):
             
             loss, acc  = epoch('train', trainloader, net, optimizer_net, criterion, args, aug = True if args.dsa else False)
             acc_train.append(acc)
+            loss_train.append(loss)
             loss, acc  = epoch('eval', testloader, net, optimizer_net, criterion, args, aug = True if args.dsa else False)
             acc_test.append(acc)
+            loss_test.append(loss)
             exposides.append(it)
             print('Epoch' , it+1, 'Accuracy on train condensed dataset', acc_train[it], ' Accuracy on test dataset', acc_test[it])           
 
         print('%s training end'%get_time())
-        fig, ax = plt.subplots()
 
+        fig, ax = plt.subplots()
         ax.plot(exposides, acc_train, label='accuracy on train condensed dataset') 
         ax.plot(exposides, acc_test, label='accuracy on test dataset') 
 
@@ -133,8 +137,18 @@ def main():
         ax.set_ylabel('Accuracy') #设置y轴名称 y label
         ax.set_title('The accuracy results of training and testing') #设置图名为Simple Plot
         ax.legend() #自动检测要在图例中显示的元素，并且显示
-        fig.savefig('./train_from_condense.jpg')
+        fig.savefig('./train_from_condense_task2_acc.jpg')
 
+
+        fig, ax = plt.subplots()
+        ax.plot(exposides, loss_train, label='loss on train condensed dataset') 
+        ax.plot(exposides, loss_test, label='loss on test dataset') 
+
+        ax.set_xlabel('Epochs') #设置x轴名称 x label
+        ax.set_ylabel('Loss') #设置y轴名称 y label
+        ax.set_title('The loss results of training and testing') #设置图名为Simple Plot
+        ax.legend() #自动检测要在图例中显示的元素，并且显示
+        fig.savefig('./train_from_condense_task2_loss.jpg')
 
 if __name__ == '__main__':
     main()
